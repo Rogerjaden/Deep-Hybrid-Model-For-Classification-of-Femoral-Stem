@@ -1,0 +1,24 @@
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+
+def get_train_transforms():
+    return A.Compose([
+        A.Resize(160,160),
+        A.HorizontalFlip(p=0.5),
+        A.RandomBrightnessContrast(p=0.3),
+        A.ShiftScaleRotate(
+            shift_limit=0.05,
+            scale_limit=0.05,
+            rotate_limit=10,
+            p=0.5
+        ),
+        A.Normalize(mean=(0.5,0.5,0.5), std=(0.5,0.5,0.5)),
+        ToTensorV2()
+    ])
+
+def get_valid_transforms():
+    return A.Compose([
+        A.Resize(224,224),
+        A.Normalize(mean=(0.5,0.5,0.5), std=(0.5,0.5,0.5)),
+        ToTensorV2()
+    ])

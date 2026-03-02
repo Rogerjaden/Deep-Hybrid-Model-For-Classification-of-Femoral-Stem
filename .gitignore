@@ -1,0 +1,20 @@
+# Virtual Environment
+.venv/
+
+# Model weights
+*.pth
+*.pt
+*.h5
+*.ckpt
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Results folders
+results/
+gradcam_results/
+
+# IDE files
+.idea/
+.vscode/
