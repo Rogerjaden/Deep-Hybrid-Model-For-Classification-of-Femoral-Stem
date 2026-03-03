@@ -11,12 +11,11 @@ from utils.transforms import get_train_transforms, get_valid_transforms
 from utils.engine import train_one_epoch, validate
 
 DATASET_PATH = "dataset"
-BATCH_SIZE = 2
+BATCH_SIZE = 8
 EPOCHS = 20
 LR = 1e-4
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
 # -----------------------------
 # DATASET
 # -----------------------------
@@ -55,6 +54,8 @@ scaler = torch.cuda.amp.GradScaler()
 # -----------------------------
 # TRAIN LOOP
 # -----------------------------
+best_acc = 0
+
 for epoch in range(EPOCHS):
 
     train_loss, train_acc = train_one_epoch(
@@ -72,6 +73,10 @@ Epoch {epoch+1}/{EPOCHS}
 Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f}
 Valid Loss: {val_loss:.4f} | Valid Acc: {val_acc:.4f}
 """)
-    torch.save(model.state_dict(), "msftnet_model.pth")
-    print("Model saved!")
+
+    # Save best model only
+    if val_acc > best_acc:
+        best_acc = val_acc
+        torch.save(model.state_dict(), "msftnet_model.pth")
+        print("Best model saved!")
 

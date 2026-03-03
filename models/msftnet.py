@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import timm
-from models.cbam import CBAM
+from models.eca import ECA
 
 class MSFTNet(nn.Module):
     def __init__(self, num_classes):
@@ -10,11 +10,11 @@ class MSFTNet(nn.Module):
         # CNN backbone
         self.backbone = timm.create_model(
             "resnet50",
-            pretrained=True,
-            features_only=True
+            pretrained=False,
+            num_classes=0
         )
 
-        self.cbam = CBAM(2048)
+        self.eca = ECA(2048)
 
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=2048,
@@ -30,16 +30,17 @@ class MSFTNet(nn.Module):
         self.fc = nn.Linear(2048, num_classes)
 
     def forward(self, x):
-        x = self.backbone(x)[-1]
-        x = self.cbam(x)
+        x = self.backbone.forward_features(x)
+        self.feature_map = x
+
+        x = self.eca(x)
 
         b, c, h, w = x.shape
 
-        x = x.view(b, c, h * w).permute(0, 2, 1)  # [B,49,2048]
+        x = x.view(b, c, h * w).permute(0, 2, 1)
 
         x = self.transformer(x)
 
-        # FIXED LINE
-        x = x.mean(dim=1)  # [B,2048]
+        x = x.mean(dim=1)
 
         return self.fc(x)
