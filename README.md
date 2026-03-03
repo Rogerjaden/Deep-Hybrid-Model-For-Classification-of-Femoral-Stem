@@ -40,6 +40,55 @@ MSFT-Net (Multi-Scale Feature Transformer Network) is a **Hybrid CNN + Attention
 - Grad-CAM for Explainable AI
 
 ---
+## 🎯 Problem Statement
+
+In hip arthroplasty (hip replacement surgery), identifying the correct femoral stem implant type is critical for:
+
+- Revision surgeries
+- Pre-operative planning
+- Implant compatibility
+- Clinical documentation verification
+
+Manual identification from radiographs can be:
+
+- Time-consuming
+- Error-prone
+- Dependent on expert knowledge
+
+This project automates implant classification using deep learning.
+
+---
+
+
+## � Visual Results & Analytics
+
+### 🔍 Grad-CAM: Input vs. Explanation
+Grad-CAM (Gradient-weighted Class Activation Mapping) helps visualize which parts of the X-ray the model prioritized for its classification.
+
+| Sample Input (Raw X-Ray) | Model Explanation (Grad-CAM) |
+|:---:|:---:|
+| ![Input](test_images/loose%20(39).png) | ![Grad-CAM](results/gradcam/loose%20(39).png) |
+| *Example Input: Loose Stem* | *Heatmap highlighting the loose femoral stem region* |
+
+---
+
+### 📈 Model Metrics Plots
+The following plots illustrate the performance and stability of MSFT-Net across all classes.
+
+| F1-Score Comparison | Key Model Metrics |
+|:---:|:---:|
+| ![F1 Comparison](results/plots/f1_score_comparison.png) | ![Key Metrics](results/plots/key_model_metrics.png) |
+
+---
+
+## 🚦 Project Status & Highlights
+- **Performance:** Achieved **93.37% test accuracy** across three classes.
+- **Explainability:** Integrated **Grad-CAM** heatmaps to provide visual evidence for clinical trust.
+- **Attention Baseline:** Implemented **CBAM (Convolutional Block Attention Module)** with sequential channel + spatial gates as the initial attention design.
+- **Attention Upgrade:** Migrated to **ECA (Efficient Channel Attention)** — a parameter-efficient 1D convolution approach — for superior speed and accuracy in medical imaging.
+- **Ready-to-Run:** Includes a **Mock Simulation** environment to test full pipeline functionality instantly.
+
+---
 
 # 🧠 Proposed Architecture: MSFT-Net
 
@@ -398,19 +447,17 @@ Grad-CAM is implemented to:
 
 ---
 
-# 🛠 Tech Stack
 
-- Python  
-- PyTorch  
-- timm  
-- scikit-learn  
-- NumPy  
-- Matplotlib  
-- OpenCV  
-- Albumentations  
+## 🛠 Tech Stack
+
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)
+![Scikit-Learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white)
+![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)
+![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)
+![OpenCV](https://img.shields.io/badge/opencv-%23white.svg?style=for-the-badge&logo=opencv&logoColor=white)
 
 ---
-
 # 🚀 How to Run
 
 ## 1️⃣ Install Dependencies
@@ -508,4 +555,5 @@ Developed as a Final Year Research Project focusing on:
 
 # ⚠ Disclaimer
 
-This system is intended for academic and research purposes only and should not replace professional medical judgment.
+This model is intended for research and academic purposes only and should not replace clinical judgment.
+
