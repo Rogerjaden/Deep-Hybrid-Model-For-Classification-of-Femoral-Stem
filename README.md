@@ -2,6 +2,14 @@
 
 ---
 
+## 🎯 What is this project about?
+
+**MSFT-Net** is an advanced Artificial Intelligence research project developed to solve a critical challenge in orthopedic surgery: the rapid and accurate identification of femoral stem implants from hip X-ray radiographs.
+
+By integrating multi-scale convolutional features with global transformer-based attention (ECA), this system automates the classification of implants into three primary categories (Anatomical, Cemented, and Uncemented). This tool is designed to support clinical decision-making, preoperative planning for revision surgeries, and large-scale clinical data verification with **93%+ accuracy** and **Explainable AI (Grad-CAM)** visualizations.
+
+---
+
 ## 📌 Project Overview
 
 This project presents a medical AI system for automatically classifying femoral stem implant types from hip X-ray radiographs using a deep hybrid neural network architecture.
