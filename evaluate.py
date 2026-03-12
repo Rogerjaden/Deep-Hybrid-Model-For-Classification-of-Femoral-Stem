@@ -13,6 +13,7 @@ from utils.transforms import get_valid_transforms
 import os
 import logging
 from datetime import datetime
+from tqdm import tqdm
 
 OUTPUT_DIR = "results/evaluation"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -33,7 +34,10 @@ logger = logging.getLogger()
 # -----------------------------
 # CONFIG
 # -----------------------------
-MODEL_PATH = "msftnet_model.pth"
+MODEL_PATH = "msftnet_model_best.pth"
+if not os.path.exists(MODEL_PATH):
+    MODEL_PATH = "msftnet_model.pth" # Fallback to legacy name if best doesn't exist
+
 DATASET_PATH = "dataset"
 CLASS_NAMES = ["anatomical", "cemented", "uncemented"]
 
@@ -42,14 +46,21 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # -----------------------------
 # LOAD DATA
 # -----------------------------
+# Note: HipDataset uses sorted(os.listdir(root_dir)) to get classes
 dataset = HipDataset(DATASET_PATH, transform=get_valid_transforms())
-loader = DataLoader(dataset, batch_size=16, shuffle=False)
+loader = DataLoader(dataset, batch_size=16, shuffle=False, num_workers=4)
 
 # -----------------------------
 # LOAD MODEL
 # -----------------------------
-model = MSFTNet(num_classes=len(CLASS_NAMES))
-model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+# Default to ECA as used in main.py default
+model = MSFTNet(num_classes=len(CLASS_NAMES), attn_type="eca")
+if os.path.exists(MODEL_PATH):
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+    logger.info(f"Loaded weights from {MODEL_PATH}")
+else:
+    logger.warning(f"No model found at {MODEL_PATH}. Running evaluation on randomly initialized weights!")
+
 model.to(device)
 model.eval()
 
@@ -60,13 +71,19 @@ all_probs = []
 # -----------------------------
 # EVALUATION LOOP
 # -----------------------------
+logger.info("Starting evaluation...")
+sweep = tqdm(loader, desc="Evaluating")
 with torch.no_grad():
-    for images, labels in loader:
+    for images, labels in sweep:
         images = images.to(device)
 
-        outputs = model(images)
+        if device == "cuda":
+            with torch.cuda.amp.autocast():
+                outputs = model(images)
+        else:
+            outputs = model(images)
+            
         probs = torch.softmax(outputs, dim=1)
-
         preds = torch.argmax(probs, dim=1)
 
         all_preds.extend(preds.cpu().numpy())
@@ -80,8 +97,8 @@ all_probs = np.array(all_probs)
 # -----------------------------
 # FINAL ACCURACY
 # -----------------------------
-accuracy = np.mean(all_preds == all_labels)
-logger.info(f"\nFinal Test Accuracy: {accuracy * 100:.2f}%")
+accuracy_val = np.mean(all_preds == all_labels)
+logger.info(f"\nFinal Test Accuracy: {accuracy_val * 100:.2f}%")
 
 # -----------------------------
 # CONFUSION MATRIX
@@ -123,7 +140,7 @@ plt.savefig(os.path.join(OUTPUT_DIR, "roc_curve.png"))
 plt.close()
 
 logger.info("\nEvaluation complete.")
-logger.info("Saved: evaluation.png & roc_curve.png")
+logger.info(f"Saved: confusion_matrix.png & roc_curve.png to {OUTPUT_DIR}")
 
 
 # -----------------------------

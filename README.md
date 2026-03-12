@@ -1,4 +1,16 @@
-﻿# 🦴 MSFT-Net: Deep Hybrid Model for Automatic Femoral Stem Classification
+# 🦴 MSFT-Net: Deep Hybrid Model for Automatic Femoral Stem Classification
+
+---
+
+## 🚀 Key Improvements in this Version (exp-malc)
+This branch introduces several critical updates to improve training stability, model performance, and clinical reliability:
+
+*   **⚡ Mixed Precision (AMP) Support:** Fully implemented `torch.cuda.amp` to accelerate GPU training and reduce memory footprint.
+*   **🏆 Best-Model Checkpointing:** The system now automatically tracks validation metrics and saves the peak-performing weights as `msftnet_model_best.pth`.
+*   **📉 Early Stopping:** Integrated a patience-based termination mechanism to prevent overfitting and save compute time.
+*   **🧩 Switchable Attention:** Refactored architecture to support dynamic selection between **ECA** (Efficient Channel Attention) and **CBAM** (Convolutional Block Attention) via CLI.
+*   **🧠 Robust Data Splitting:** Implemented **Stratified Sampling** to ensure class balance across splits and resolved transform leakage issues using `Subset` logic.
+*   **📊 Enhanced Progress Monitoring:** Added real-time tracking using `tqdm` and improved dual-channel logging (File + Console).
 
 ---
 
@@ -6,28 +18,40 @@
 
 **MSFT-Net** is an advanced Artificial Intelligence research project developed to solve a critical challenge in orthopedic surgery: the rapid and accurate identification of femoral stem implants from hip X-ray radiographs.
 
-By integrating multi-scale convolutional features with global transformer-based attention (ECA), this system automates the classification of implants into three primary categories (Anatomical, Cemented, and Uncemented). This tool is designed to support clinical decision-making, preoperative planning for revision surgeries, and large-scale clinical data verification with **93%+ accuracy** and **Explainable AI (Grad-CAM)** visualizations.
+By integrating multi-scale convolutional features with dual attention mechanisms — **CBAM (Convolutional Block Attention Module)** and **ECA (Efficient Channel Attention)** — this system automates classification into three primary categories:
+
+- 🟢 Anatomical  
+- 🔵 Cemented  
+- 🟡 Uncemented  
+
+The system achieves:
+
+- ✅ **96.87% Test Accuracy**
+- ✅ **Macro F1 ≈ 0.96**
+- ✅ **ROC-AUC ≈ 0.99**
+- ✅ **Grad-CAM Explainability**
+
+Designed to support:
+
+- Revision surgery planning  
+- Implant compatibility verification  
+- Clinical documentation validation  
+- AI-assisted radiographic assessment  
 
 ---
 
-## 📌 Project Overview
+# 📌 Project Overview
 
-This project presents a medical AI system for automatically classifying femoral stem implant types from hip X-ray radiographs using a deep hybrid neural network architecture.
+MSFT-Net (Multi-Scale Feature Transformer Network) is a **Hybrid CNN + Attention + Transformer architecture** built using:
 
-The proposed model, MSFT-Net (Multi-Scale Feature Transformer Network), combines:
-
-- Convolutional Neural Networks (CNN)
-- Attention Mechanisms (CBAM / alternatives)
-- Transformer Encoder Modules
-
-to accurately classify implant types into:
-
-- 🟢 Anatomical
-- 🔵 Cemented
-- 🟡 Uncemented
+- PyTorch
+- ResNet-50 (pretrained via `timm`)
+- Multi-scale feature aggregation
+- Attention mechanisms (CBAM & ECA)
+- Transformer encoder
+- Grad-CAM for Explainable AI
 
 ---
-
 ## 🎯 Problem Statement
 
 In hip arthroplasty (hip replacement surgery), identifying the correct femoral stem implant type is critical for:
@@ -47,9 +71,8 @@ This project automates implant classification using deep learning.
 
 ---
 
----
 
-## � Visual Results & Analytics
+##  Visual Results & Analytics
 
 ### 🔍 Grad-CAM: Input vs. Explanation
 Grad-CAM (Gradient-weighted Class Activation Mapping) helps visualize which parts of the X-ray the model prioritized for its classification.
@@ -70,222 +93,311 @@ The following plots illustrate the performance and stability of MSFT-Net across 
 
 ---
 
----
-
-## �🚦 Project Status & Highlights
-- **Performance:** Achieved **93.37% test accuracy** across three classes.
+## 🚦 Project Status & Highlights
+- **Performance:** Achieved **93.37% test accuracy** across three classes (Baseline).
 - **Explainability:** Integrated **Grad-CAM** heatmaps to provide visual evidence for clinical trust.
-*   **Architecture:** Upgraded to **ECA (Efficient Channel Attention)** for high efficiency in medical imaging.
-*   **Ready-to-Run:** Includes a **Mock Simulation** environment to test full pipeline functionality instantly.
+- **Attention Baseline:** Implemented **CBAM (Convolutional Block Attention Module)** with sequential channel + spatial gates as the initial attention design.
+- **Attention Upgrade:** Migrated to **ECA (Efficient Channel Attention)** — a parameter-efficient 1D convolution approach — for superior speed and accuracy in medical imaging.
+- **Ready-to-Run:** Includes a **Mock Simulation** environment to test full pipeline functionality instantly.
 
 ---
 
-## 🧠 Proposed Architecture: MSFT-Net
+# 🧠 Updated Architecture: MSFT-Net
 
 The architecture integrates:
 
-- Multi-Scale Feature Extraction
-- Pretrained ResNet backbone
-- **Efficient Channel Attention (ECA)**
-  - Local cross-channel interaction without dimensionality reduction
-  - Extremely lightweight and faster than standard mechanisms
-- Transformer Encoder Module
-  - Captures global contextual relationships
-- Fully Connected Classifier
+- Pretrained ResNet-50 backbone  
+- Multi-scale feature extraction (C2–C5)  
+- **Switchable Attention recalibration (ECA / CBAM)**  
+- Transformer Encoder for global context modeling  
+- Fully connected classifier  
 
-### 🗺 Model Architecture Flow
+---
+
+## 🗺 Model Architecture Flow
+
 ```mermaid
 flowchart TD
+  %% =======================
+  %% View 1 — Workflow / Orchestration
+  %% =======================
 
-%% =========================
-%% Legend
-%% =========================
-subgraph "Legend"
-direction TB
-L1["Blue: Entry scripts (pipelines)"]:::script
-L2["Orange: Shared utilities (data/engine/metrics)"]:::util
-L3["Green: Model code (MSFT-Net components)"]:::model
-L4[("Gray cylinder: Artifacts in results/")]:::artifact
-L5["Solid arrow: data/artifact flow"]:::note
-L6["Dashed arrow: code dependency"]:::note
-end
+  subgraph "View 1: Offline ML Workflow (scripts + shared libs + filesystem artifacts)"
+    direction TB
 
-%% =========================
-%% Swimlane 1: Inputs
-%% =========================
-subgraph "Inputs"
-direction TB
-DATASET["dataset/ (X-ray images)\n- anatomical/\n- cemented/\n- uncemented/"]:::data
-TESTIMAGES["test_images/ (new X-ray inputs)"]:::data
-end
+    subgraph "Inputs (Local/External Folders)"
+      direction TB
+      DATASET[/"dataset/ (image folders; train/val/test splits)"/]:::external
+      TESTIMGS[/"test_images/ (demo/inference inputs)"/]:::external
+    end
 
-%% =========================
-%% Swimlane 2: Shared Libraries
-%% =========================
-subgraph "Core Libraries (shared)"
-direction TB
+    subgraph "Runners (Entry-point Scripts)"
+      direction TB
+      MAIN["main.py (Training Orchestrator, PyTorch)"]:::entry
+      EVAL["evaluate.py (Evaluation Runner)"]:::entry
+      PRED["predict.py (Inference Runner)"]:::entry
+      PLOT["final_metrics_plot.py (Reporting/Plotting Runner)"]:::entry
+    end
 
-subgraph "utils/ (PyTorch + Albumentations + scikit-learn)"
-direction TB
-UT_INIT["utils/__init__.py\n(package exports)"]:::util
-UT_TRANS["utils/transforms.py\naugmentation + preprocessing\n(Albumentations/torchvision)"]:::util
-UT_DATA["utils/dataset.py\nDataset/DataLoader wiring\n(PyTorch)"]:::util
-UT_ENGINE["utils/engine.py\ntrain/val loops + device mgmt\n(PyTorch)"]:::util
-UT_METRICS["utils/metrics.py\nF1/ROC-AUC/confusion matrix\n(scikit-learn)"]:::util
-end
+    subgraph "Shared Libraries (Imported Modules)"
+      direction TB
 
-subgraph "models/ (PyTorch)"
-direction TB
-M_INIT["models/__init__.py\n(package exports)"]:::model
-MSFT["models/msftnet.py\nMSFT-Net (CNN + ECA + Transformer + Classifier)"]:::model
-ECA["models/eca.py\nECA attention module"]:::model
-GCAM["gradcam.py\nExplainability Engine\n(Grad-CAM heatmaps)"]:::model
-end
-end
+      subgraph "utils/ (Data + loops + metrics)"
+        direction TB
+        U_TRANS["utils/transforms.py (Preprocess + Augment)"]:::utils
+        U_DATA["utils/dataset.py (Dataset + DataLoader)"]:::utils
+        U_ENG["utils/engine.py (Train/Val Epoch Loops)"]:::utils
+        U_MET["utils/metrics.py (F1/ROC-AUC/Confusion Matrix)"]:::utils
+        U_INIT["utils/__init__.py (Package Exports)"]:::utilsMinor
+      end
 
-%% =========================
-%% Swimlane 3: Runners (entry points)
-%% =========================
-subgraph "Runners (entry points)"
-direction TB
-TRAIN["main.py\nOffline training pipeline\n(3-class classification)"]:::script
-EVAL["evaluate.py\nOffline evaluation pipeline\n(metrics + eval outputs)"]:::script
-PRED["predict.py\nInference/prediction pipeline\n(Inference + Grad-CAM)"]:::script
-REPORT["final_metrics_plot.py\nReporting/visualization pipeline\n(Matplotlib/Seaborn)"]:::script
-end
+      subgraph "models/ (MSFT-Net)"
+        direction TB
+        M_MSFT["models/msftnet.py (MSFT-Net Model)"]:::model
+        M_ECA["models/eca.py (ECA Attention)"]:::modelSub
+        M_INIT["models/__init__.py (Package Exports)"]:::modelMinor
+      end
 
-%% =========================
-%% Swimlane 4: Artifacts (results/)
-%% =========================
-subgraph "Artifacts (results/)"
-direction TB
-RESULTS[("results/ (artifact store)")]:::artifact
-METJSON[("results/metrics.json\ncanonical metrics artifact")]:::artifact
-EVALOUT[("results/evaluation/\nconfusion matrix + ROC + per-class outputs")]:::artifact
-PLOTS[("results/plots/\ntraining curves + metric comparisons")]:::artifact
-GCAMOUT[("results/gradcam/\nGrad-CAM overlay images")]:::artifact
-end
+      GC["gradcam.py (Grad-CAM Explainability Engine)"]:::xai
+    end
 
-%% =========================
-%% Data flow: Inputs -> utils -> runners -> artifacts
-%% =========================
-DATASET -->|"images"| UT_TRANS -->|"tensors"| UT_DATA
-TESTIMAGES -->|"images"| UT_TRANS
+    subgraph "Artifacts (Filesystem Integration Bus: results/ + logs)"
+      direction TB
+      WTS[("trained weights/checkpoints (.pth)")]:::artifact
+      METJSON[("results/metrics.json (Canonical Metrics Artifact)")]:::artifact
+      REVAL[("results/evaluation/ (ROC, confusion matrix, per-class outputs)")]:::artifact
+      RPLOTS[("results/plots/ (figures/reports)")]:::artifact
+      RGCAM[("results/gradcam/ (Grad-CAM overlay images)")]:::artifact
+      LOGS[("Logs/ (optional training logs)")]:::artifactDim
+    end
 
-UT_DATA -->|"batches"| TRAIN
-UT_DATA -->|"test-batches"| EVAL
+    %% ---- Runtime data / artifact flow (solid) ----
+    DATASET -->|"images(PNG/JPG)"| U_TRANS
+    U_TRANS -->|"tensors(C×H×W)"| U_DATA
 
-UT_TRANS -->|"preprocessed-image"| PRED
+    U_DATA -->|"batches(B×C×H×W)"| MAIN
+    MAIN -->|"weights(.pth)"| WTS
+    MAIN -->|"logs"| LOGS
 
-%% =========================
-%% Code dependencies (dashed)
-%% =========================
-TRAIN -.->|"uses"| UT_ENGINE
-TRAIN -.->|"uses"| UT_METRICS
-TRAIN -.->|"uses"| MSFT
+    DATASET -->|"testsplit(images)"| U_DATA
+    U_DATA -->|"batches"| EVAL
+    WTS -->|"loadweights"| EVAL
+    EVAL -->|"metrics(json)"| METJSON
+    EVAL -->|"evaloutputs(files)"| REVAL
 
-EVAL -.->|"uses"| UT_DATA
-EVAL -.->|"uses"| UT_METRICS
-EVAL -.->|"loads"| MSFT
+    METJSON -->|"readmetrics"| PLOT
+    PLOT -->|"plots(figures)"| RPLOTS
 
-PRED -.->|"loads"| MSFT
-PRED -.->|"uses"| GCAM
+    TESTIMGS -->|"images(PNG/JPG)"| PRED
+    PRED -->|"preprocess"| U_TRANS
+    WTS -->|"loadweights"| PRED
+    PRED -->|"gradcaminputs(featuremaps+grads)"| GC
+    GC -->|"heatmaps(overlayPNG)"| RGCAM
 
-REPORT -.->|"reads"| METJSON
+    %% ---- Code/module dependencies (dashed) ----
+    MAIN -.->|"imports"| U_ENG
+    MAIN -.->|"imports"| U_MET
+    MAIN -.->|"imports"| M_MSFT
+    MAIN -.->|"imports"| U_DATA
+    MAIN -.->|"imports"| U_TRANS
 
-MSFT -.->|"uses"| ECA
-UT_INIT -.->|"exports"| UT_TRANS
-UT_INIT -.->|"exports"| UT_DATA
-UT_INIT -.->|"exports"| UT_ENGINE
-UT_INIT -.->|"exports"| UT_METRICS
-M_INIT -.->|"exports"| MSFT
-M_INIT -.->|"exports"| ECA
+    EVAL -.->|"imports"| U_DATA
+    EVAL -.->|"imports"| U_MET
+    EVAL -.->|"imports"| M_MSFT
 
-%% =========================
-%% Artifact flow
-%% =========================
-TRAIN -->|"trained-model (saved weights)"| RESULTS
-EVAL -->|"writes"| METJSON
-EVAL -->|"writes"| EVALOUT
-METJSON -->|"input"| REPORT
-REPORT -->|"writes"| PLOTS
-PRED -->|"writes heatmaps"| GCAMOUT
+    PRED -.->|"imports"| M_MSFT
+    PRED -.->|"imports"| GC
+    PRED -.->|"imports"| U_TRANS
 
-RESULTS -->|"contains"| METJSON
-RESULTS -->|"contains"| EVALOUT
-RESULTS -->|"contains"| PLOTS
-RESULTS -->|"contains"| GCAMOUT
+    M_MSFT -.->|"uses"| M_ECA
+    U_DATA -.->|"exports"| U_INIT
+    M_MSFT -.->|"exports"| M_INIT
+  end
 
-%% =========================
-%% Model Internal Architecture (MSFT-Net)
-%% =========================
-subgraph "MSFT-Net internal architecture (from models/msftnet.py)"
-direction TB
-XIN["Input: X-ray tensor\n(after transforms)"]:::model
-BACKB["Backbone: Pretrained ResNet\n(torchvision/timm)"]:::model
-MSCALE["Multi-scale feature maps\n(C2/C3/C4/C5)"]:::model
-ATTN["ECA attention\n(models/eca.py)"]:::model
-TRANS["Transformer encoder\n(global context modeling)"]:::model
-HEAD["Classifier head\n(FC layers)"]:::model
-OUT["Output: Softmax logits\n3 classes:\nAnatomical / Cemented / Uncemented"]:::model
+  %% =======================
+  %% View 2 — Model Internals (MSFT-Net)
+  %% =======================
 
-XIN --> BACKB --> MSCALE --> ATTN --> TRANS --> HEAD --> OUT
-end
+  subgraph "View 2: MSFT-Net Internal Architecture (models/msftnet.py)"
+    direction TB
 
-%% Tie shared model node to internal view
-MSFT -.->|"implements"| XIN
+    IN["Input tensor (B×C×H×W)"]:::tensor
+    BACKBONE["ResNet-50 Backbone (timm pretrained)\n(local feature extraction)"]:::model
+    MSCALE["Multi-scale feature aggregation (C2–C5)\n(multi-resolution features)"]:::model
+    ECAI["ECA Attention (models/eca.py)\n(channel recalibration)"]:::modelSub
+    TR["Transformer Encoder\n(global context modeling)"]:::model
+    HEAD["Pooling/Flatten + Classifier Head\n(3-class logits)"]:::model
+    OUT["Output logits/softmax\n(3 stem types)"]:::tensor
 
-%% =========================
-%% Click events (from component mapping)
-%% =========================
-click TRAIN "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/main.py"
-click EVAL "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/evaluate.py"
-click PRED "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/predict.py"
-click GCAM "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/gradcam.py"
-click REPORT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/final_metrics_plot.py"
+    IN -->|"forward"| BACKBONE
+    BACKBONE -->|"featuremaps"| MSCALE
+    MSCALE -->|"reweightedfeatures"| ECAI
+    ECAI -->|"sequence/embeddings"| TR
+    TR -->|"contextfeatures"| HEAD
+    HEAD -->|"logits"| OUT
+  end
 
-click MSFT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/models/msftnet.py"
-click ECA "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/models/eca.py"
-click M_INIT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/models/__init__.py"
+  %% =======================
+  %% View 3 — Metrics + Explainability Subsystem
+  %% =======================
 
-click UT_DATA "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/utils/dataset.py"
-click UT_TRANS "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/utils/transforms.py"
-click UT_ENGINE "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/utils/engine.py"
-click UT_METRICS "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/utils/metrics.py"
-click UT_INIT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/utils/__init__.py"
+  subgraph "View 3: Metrics + Reporting + Explainability"
+    direction TB
 
-click RESULTS "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/tree/main/results/"
-click METJSON "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/main/results/metrics.json"
-click EVALOUT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/tree/main/results/evaluation/"
-click GCAMOUT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/tree/main/results/gradcam/"
-click PLOTS "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/tree/main/results/plots/"
+    subgraph "Metrics/Reporting"
+      direction TB
+      METSYS["utils/metrics.py\n(F1 macro/weighted, ROC-AUC OVR, confusion matrix)"]:::utils
+      EVALRUN["evaluate.py (runs test set)"]:::entry
+      MJSON[("results/metrics.json")]:::artifact
+      EFILES[("results/evaluation/")]:::artifact
+      PLOTRUN["final_metrics_plot.py (builds figures)"]:::entry
+      PFILES[("results/plots/")]:::artifact
+      EVALRUN -->|"computemetrics"| METSYS
+      METSYS -->|"write"| MJSON
+      METSYS -->|"write"| EFILES
+      MJSON -->|"consume"| PLOTRUN
+      PLOTRUN -->|"write"| PFILES
+    end
 
-click TESTIMAGES "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/tree/main/test_images/"
+    subgraph "Explainability (XAI)"
+      direction TB
+      PRUN["predict.py (inference)"]:::entry
+      GCE["gradcam.py (Grad-CAM engine)"]:::xai
+      GCF[("results/gradcam/")]:::artifact
+      PRUN -->|"calls"| GCE
+      GCE -->|"writeoverlays"| GCF
+    end
+  end
 
-%% =========================
-%% Styles
-%% =========================
-classDef script fill:#1f77b4,stroke:#0b3d66,color:#ffffff,stroke-width:1px
-classDef util fill:#ff7f0e,stroke:#7a3a00,color:#ffffff,stroke-width:1px
-classDef model fill:#2ca02c,stroke:#145214,color:#ffffff,stroke-width:1px
-classDef artifact fill:#9aa0a6,stroke:#4b4f54,color:#111111,stroke-width:1px
-classDef data fill:#9467bd,stroke:#3f2a63,color:#ffffff,stroke-width:1px
-classDef note fill:#f2f2f2,stroke:#cccccc,color:#111111,stroke-width:1px
+  %% =======================
+  %% External dependencies (footnote cluster)
+  %% =======================
+  subgraph "External Dependencies (Libraries)"
+    direction TB
+    TORCH["PyTorch"]:::dep
+    TIMM["timm/torchvision (pretrained backbones)"]:::dep
+    SK["scikit-learn (metrics)"]:::dep
+    CV["OpenCV (image I/O; overlays)"]:::dep
+    MPL["matplotlib/seaborn (plots)"]:::dep
+    NP["NumPy"]:::dep
+    AUG["albumentations/torchvision transforms"]:::dep
+  end
+
+  %% Light-touch dependency hints
+  U_MET -.->|"uses"| SK
+  M_MSFT -.->|"uses"| TORCH
+  M_MSFT -.->|"uses"| TIMM
+  U_TRANS -.->|"uses"| AUG
+  GC -.->|"uses"| CV
+  PLOT -.->|"uses"| MPL
+  U_DATA -.->|"uses"| NP
+
+  %% =======================
+  %% Click events (from component_mapping)
+  %% =======================
+  click MAIN "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/main.py"
+  click EVAL "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/evaluate.py"
+  click PRED "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/predict.py"
+  click PLOT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/final_metrics_plot.py"
+  click GC "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/gradcam.py"
+
+  click U_DATA "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/utils/dataset.py"
+  click U_TRANS "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/utils/transforms.py"
+  click U_ENG "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/utils/engine.py"
+  click U_MET "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/utils/metrics.py"
+  click U_INIT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/utils/__init__.py"
+
+  click M_MSFT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/models/msftnet.py"
+  click M_ECA "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/models/eca.py"
+  click M_INIT "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/models/__init__.py"
+
+  click METJSON "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/blob/experiment-eca/results/metrics.json"
+  click REVAL "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/tree/experiment-eca/results/evaluation/"
+  click RPLOTS "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/tree/experiment-eca/results/plots/"
+  click RGCAM "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/tree/experiment-eca/results/gradcam/"
+  click TESTIMGS "https://github.com/rogerjaden/deep-hybrid-model-for-classification-of-femoral-stem/tree/experiment-eca/test_images/"
+
+  %% =======================
+  %% Styles
+  %% =======================
+  classDef entry fill:#1e88e5,stroke:#0d47a1,color:#ffffff,stroke-width:1.5px
+  classDef utils fill:#fb8c00,stroke:#e65100,color:#111111,stroke-width:1.3px
+  classDef utilsMinor fill:#ffcc80,stroke:#ef6c00,color:#111111,stroke-width:1px
+  classDef model fill:#43a047,stroke:#1b5e20,color:#ffffff,stroke-width:1.5px
+  classDef modelSub fill:#81c784,stroke:#1b5e20,color:#111111,stroke-width:1.2px
+  classDef modelMinor fill:#c5e1a5,stroke:#1b5e20,color:#111111,stroke-width:1px
+  classDef xai fill:#8e24aa,stroke:#4a148c,color:#ffffff,stroke-width:1.5px
+  classDef artifact fill:#90a4ae,stroke:#37474f,color:#111111,stroke-width:1.3px
+  classDef artifactDim fill:#cfd8dc,stroke:#607d8b,color:#111111,stroke-width:1px
+  classDef external fill:#7e57c2,stroke:#311b92,color:#ffffff,stroke-width:1.4px
+  classDef tensor fill:#26a69a,stroke:#004d40,color:#ffffff,stroke-width:1.2px
+  classDef dep fill:#eeeeee,stroke:#616161,color:#111111,stroke-width:1px,stroke-dasharray: 4 3
 ```
 
 ---
 
-## 📊 Dataset
+# 🔬 Attention Mechanisms: CBAM vs ECA
 
-- 2,744 hip X-ray images
-- 3 implant classes:
+## 🔷 CBAM — Convolutional Block Attention Module
+
+CBAM applies attention sequentially:
+
+1. Channel Attention (MLP-based)
+2. Spatial Attention (7×7 convolution)
+
+```
+Input → Channel Attention → Spatial Attention → Output
+```
+
+✔ Rich spatial awareness  
+✔ Strong localization  
+❌ Higher parameter cost  
+
+---
+
+## 🔶 ECA — Efficient Channel Attention (Selected)
+
+ECA improves efficiency by:
+
+- Using global average pooling
+- Applying adaptive 1D convolution across channels
+- Avoiding dimensionality reduction
+
+```
+Input → AvgPool → 1D Conv → Sigmoid → Channel Weights → Output
+```
+
+✔ Near-zero parameter overhead  
+✔ No bottleneck  
+✔ Faster inference  
+✔ Better scaling at 2048 channels  
+
+---
+
+## ⚖️ CBAM vs ECA Comparison
+
+| Feature | CBAM | ECA |
+|----------|------|------|
+| Channel Attention | MLP | 1D Conv |
+| Spatial Attention | Yes | No |
+| Dimensionality Reduction | Yes | No |
+| Parameters | Higher | Very Low |
+| Speed | Moderate | Fast |
+| Final Model | Baseline | ✅ Selected |
+
+---
+
+# 📊 Dataset
+
+- **2,744 Hip X-ray Images**
+- 3 classes:
   - Anatomical
   - Cemented
   - Uncemented
 
-Images are organized as:
+Structure:
 
-```text
+```
 dataset/
     anatomical/
     cemented/
@@ -294,40 +406,40 @@ dataset/
 
 ---
 
-## 🏆 Model Performance
+# 🏆 Model Performance
 
-### Final Evaluation Results:
+## Final Results
 
-- ✅ Test Accuracy: 93.37%
-- ✅ Macro F1-Score: 0.93
-- ✅ Weighted F1-Score: 0.93
-- ✅ ROC-AUC (OVR): ~0.93+
+- ✅ Test Accuracy: **96.87%**
+- ✅ Macro F1-Score: **0.96**
+- ✅ Weighted F1-Score: **0.96**
+- ✅ ROC-AUC: **~0.99**
 
-### Class-wise Performance:
+### Class-wise Metrics
 
-| Class       | Precision | Recall | F1-Score |
-|------------|-----------|--------|----------|
-| Anatomical | 0.90      | 0.96   | 0.93     |
-| Cemented   | 0.98      | 0.91   | 0.94     |
-| Uncemented | 0.89      | 0.92   | 0.90     |
+| Class | Precision | Recall | F1 |
+|--------|------------|--------|----|
+| Anatomical | 0.96 | 0.97 | 0.96 |
+| Cemented | 0.97 | 0.97 | 0.97 |
+| Uncemented | 0.99 | 0.96 | 0.97 |
 
 ---
 
-## 📈 Evaluation Outputs
+# 📈 Evaluation Outputs
 
-The system automatically generates:
+Automatically generated:
 
 - Confusion Matrix
-- ROC Curve
-- F1 Score Comparison
+- ROC Curves
+- F1 Comparison Plot
 - Key Metrics Visualization
-- Training vs Validation Loss Graph
-- Grad-CAM Visual Explanations
-- **Persistent Text Logs** (Saved in `Logs/`)
+- Training vs Validation Curves
+- Grad-CAM Heatmaps
+- Persistent Logs (`Logs/`)
 
-All results are saved inside:
+Stored in:
 
-```text
+```
 results/
     evaluation/
     plots/
@@ -337,15 +449,16 @@ Logs/
 
 ---
 
-## 🔬 Explainability (Grad-CAM)
+# 🔍 Explainability (Grad-CAM)
 
-To improve interpretability in medical settings, Grad-CAM is implemented to:
+Grad-CAM is implemented to:
 
-- Highlight regions influencing predictions
-- Verify model focuses on implant structure
-- Improve trust in AI decisions
+- Highlight implant regions influencing classification
+- Improve clinical trust
+- Validate model attention focus
 
 ---
+
 
 ## 🛠 Tech Stack
 
@@ -357,83 +470,101 @@ To improve interpretability in medical settings, Grad-CAM is implemented to:
 ![OpenCV](https://img.shields.io/badge/opencv-%23white.svg?style=for-the-badge&logo=opencv&logoColor=white)
 
 ---
+# 🚀 How to Run
 
-## 🚀 How to Run
+## 1️⃣ Install Dependencies
 
-### 1. Initial Setup
-Run the automated installer to set up all dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+or
+
 ```bash
 ./install_dependencies.bat
 ```
 
-### 2. Mock Test (Optional)
-If you don't have the dataset yet, run this to generate dummy data and weights for a dry run:
+---
+
+## 2️⃣ (Optional) Mock Setup
+
 ```bash
 python setup_mock.py
 ```
 
-### 3. Training
+---
+
+## 3️⃣ Train
+You can now use command line arguments to tune the training process:
 ```bash
-python main.py
+python main.py --batch_size 16 --epochs 50 --attn eca --lr 1e-4 --patience 10
 ```
 
-### 4. Evaluation
+---
+
+## 4️⃣ Evaluate
+Uses the best saved model (`msftnet_model_best.pth`) automatically:
 ```bash
 python evaluate.py
 ```
 
-### 5. Predict & Explain
-Run prediction and generate Grad-CAM heatmaps on test images:
+---
+
+## 5️⃣ Predict + Grad-CAM
+
 ```bash
 python predict.py
 ```
 
 ---
 
-## 📁 Project Structure
+# 📁 Project Structure
 
-```text
+```
 FinalYearProject/
 │
-├── dataset/             # Hip X-ray dataset (Anatomical, Cemented, Uncemented)
+├── dataset/
 ├── models/
-│   ├── msftnet.py       # Main Hybrid Architecture
-│   ├── eca.py           # Efficient Channel Attention Module
-│   ├── cbam.py          # (Legacy) Convolutional Block Attention
+│   ├── msftnet.py
+│   ├── eca.py
+│   ├── cbam.py
 │
-├── utils/               # Dataset loaders, transforms, and training engine
-├── results/             # Plots and Grad-CAM visualizations
-├── Logs/                # Auto-generated CSV/Text logs for all runs
+├── utils/
+├── results/
+├── Logs/
 │
-├── main.py              # Training Entry Point
-├── evaluate.py          # Metric & Visualization Generator
-├── predict.py           # Single-image inference + Explainability
-├── requirements.txt     # Library dependencies
-└── install_dependencies.bat # Windows Automated Setup Script
+├── main.py
+├── evaluate.py
+├── predict.py
+├── requirements.txt
+└── install_dependencies.bat
 ```
 
 ---
 
-## 🔎 Future Improvements
+# 🔮 Future Improvements
 
-- Compare attention mechanisms (SE, ECA, Coordinate Attention)
-- Deploy as web application
-- Integrate into PACS system
-- Expand dataset
-- Perform cross-hospital validation
+- Formal ablation study (CBAM vs ECA vs SE-Net)
+- Switchable attention modes (Now Implemented in 'exp-malc'!)
+- Web deployment with live Grad-CAM
+- PACS / DICOM integration
+- Multi-hospital validation
+- Cross-scanner generalization testing
 
 ---
 
-## 🎓 Academic Context
+# 🎓 Academic Context
 
-This project was developed as a Final Year Research Project focusing on:
+Developed as a Final Year Research Project focusing on:
 
 - Deep Learning in Medical Imaging
-- Attention-based Neural Networks
+- Hybrid CNN–Transformer Architectures
+- Attention Mechanism Optimization
 - Explainable AI in Healthcare
+- Efficient Model Deployment
 
 ---
 
-## ⚠ Disclaimer
+# ⚠ Disclaimer
 
 This model is intended for research and academic purposes only and should not replace clinical judgment.
