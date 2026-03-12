@@ -2,6 +2,18 @@
 
 ---
 
+## 🚀 Key Improvements in this Version (exp-malc)
+This branch introduces several critical updates to improve training stability, model performance, and clinical reliability:
+
+*   **⚡ Mixed Precision (AMP) Support:** Fully implemented `torch.cuda.amp` to accelerate GPU training and reduce memory footprint.
+*   **🏆 Best-Model Checkpointing:** The system now automatically tracks validation metrics and saves the peak-performing weights as `msftnet_model_best.pth`.
+*   **📉 Early Stopping:** Integrated a patience-based termination mechanism to prevent overfitting and save compute time.
+*   **🧩 Switchable Attention:** Refactored architecture to support dynamic selection between **ECA** (Efficient Channel Attention) and **CBAM** (Convolutional Block Attention) via CLI.
+*   **🧠 Robust Data Splitting:** Implemented **Stratified Sampling** to ensure class balance across splits and resolved transform leakage issues using `Subset` logic.
+*   **📊 Enhanced Progress Monitoring:** Added real-time tracking using `tqdm` and improved dual-channel logging (File + Console).
+
+---
+
 ## 🎯 What is this project about?
 
 **MSFT-Net** is an advanced Artificial Intelligence research project developed to solve a critical challenge in orthopedic surgery: the rapid and accurate identification of femoral stem implants from hip X-ray radiographs.
@@ -60,7 +72,7 @@ This project automates implant classification using deep learning.
 ---
 
 
-## � Visual Results & Analytics
+##  Visual Results & Analytics
 
 ### 🔍 Grad-CAM: Input vs. Explanation
 Grad-CAM (Gradient-weighted Class Activation Mapping) helps visualize which parts of the X-ray the model prioritized for its classification.
@@ -82,7 +94,7 @@ The following plots illustrate the performance and stability of MSFT-Net across 
 ---
 
 ## 🚦 Project Status & Highlights
-- **Performance:** Achieved **93.37% test accuracy** across three classes.
+- **Performance:** Achieved **93.37% test accuracy** across three classes (Baseline).
 - **Explainability:** Integrated **Grad-CAM** heatmaps to provide visual evidence for clinical trust.
 - **Attention Baseline:** Implemented **CBAM (Convolutional Block Attention Module)** with sequential channel + spatial gates as the initial attention design.
 - **Attention Upgrade:** Migrated to **ECA (Efficient Channel Attention)** — a parameter-efficient 1D convolution approach — for superior speed and accuracy in medical imaging.
@@ -90,13 +102,13 @@ The following plots illustrate the performance and stability of MSFT-Net across 
 
 ---
 
-# 🧠 Proposed Architecture: MSFT-Net
+# 🧠 Updated Architecture: MSFT-Net
 
 The architecture integrates:
 
 - Pretrained ResNet-50 backbone  
 - Multi-scale feature extraction (C2–C5)  
-- Attention recalibration (ECA / CBAM)  
+- **Switchable Attention recalibration (ECA / CBAM)**  
 - Transformer Encoder for global context modeling  
 - Fully connected classifier  
 
@@ -483,15 +495,15 @@ python setup_mock.py
 ---
 
 ## 3️⃣ Train
-
+You can now use command line arguments to tune the training process:
 ```bash
-python main.py
+python main.py --batch_size 16 --epochs 50 --attn eca --lr 1e-4 --patience 10
 ```
 
 ---
 
 ## 4️⃣ Evaluate
-
+Uses the best saved model (`msftnet_model_best.pth`) automatically:
 ```bash
 python evaluate.py
 ```
@@ -533,7 +545,7 @@ FinalYearProject/
 # 🔮 Future Improvements
 
 - Formal ablation study (CBAM vs ECA vs SE-Net)
-- Switchable attention modes
+- Switchable attention modes (Now Implemented in 'exp-malc'!)
 - Web deployment with live Grad-CAM
 - PACS / DICOM integration
 - Multi-hospital validation
@@ -556,4 +568,3 @@ Developed as a Final Year Research Project focusing on:
 # ⚠ Disclaimer
 
 This model is intended for research and academic purposes only and should not replace clinical judgment.
-
